@@ -1,0 +1,42 @@
+       Macro
+&L     CONVERTI &R,&A,&ERR=,&STOP=
+.***************************************************************
+.* This macro converts a character string starting at the      *
+.* address to a binary integer in the register operand. If the *
+.* register operand is greater than 31, and if the number being*
+.* scanned is too large, the ERR= exit is taken, and R1 is set *
+.* to the address of the next character to be scanned. If an   *
+.* invalid character is encountered, the STOP= exit is taken,  *
+.* and R1 is set to the address of that character.             *
+.*                                                             *
+.* If either of these error occurs and no exit address is      *
+.* provided, a message is issued and the program halts.        *
+.*                                                             *
+.* Generated parameter list:                                   *
+.* DC 2F'0' For caller's R14,R15                               *
+.* DC AL1(Flag),VL3($$CNVRTI)                                  *
+.* DC S(register),S(memory_address)                            *
+.* BC 0,&ERR+0 if register or number is invalid                *
+.* BC 0,&STOP+0 if an invalid character is found               *
+.* These two BCs are not generated if no keywords are present. *
+.***************************************************************
+        LCLA  &F
+        AIF   (N'&SysList eq 2).A
+        MNote 8,'CONVERTI: 2 operands required'
+        MExit ,
+.A      ANop  ,
+&L      CNop  2,4
+        STM 14,15,*+10
+        L 15,*+14
+        BALR 14,15
+        AIF ('&ERR' eq '').B
+&F      SetA 1
+.B      AIF ('&STOP' eq '').GenData
+&F      SetA &F+2
+.GenData DC  2F'0',AL1(&F),VL3($$CNVRTI),S(&R),S(&A)
+        LM 14,15,0(14)
+        AIF (NOT &F).GenIO
+        BC 0,&ERR+0 Error in register or number
+        BC 0,&STOP+0 Invalid character found in scan
+.GenIO  $$GENIO
+        MEnd

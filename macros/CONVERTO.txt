@@ -1,0 +1,32 @@
+        Macro
+&L      CONVERTO &R,&A
+.***************************************************************
+.* This macro converts the value in the register operand to    *
+.* a signed string of decimal characters, placing the result   *
+.* in the second operand field. If the register operand is     *
+.* between 32 and 47, the floating point register is converted *
+.* to hexadecimal characters.                                  *
+.*                                                             *
+.* Generated parameter list:                                   *
+.* DC 2F'0' For caller's R14,R15                               *
+.* DC V($$CNVRTO)                                              *
+.* DC S(register),S(memory_address)                            *
+.***************************************************************
+        AIF     (N'&SysList eq 2).CVT0
+.BadArg MNote   8,'Invalid CONVERTO argument list.'
+        MExit   ,
+.CVT0   ANOP
+&V      SetA    &R
+        AIF     (0 LE &V and &V LT 48).CVT1
+.BadReg MNote   8,'Invalid CONVERTO register argument.'
+        MExit   ,
+.CVT1   AIF     ('&L' eq '').CVT2
+&L      DC      0H'0'
+.CVT2   CNop    2,4
+        STM     14,15,*+10
+        L       15,*+14
+        BALR    14,15
+        DC      2F'0',V($$CNVRTO),S(&R),S(&A)
+        LM      14,15,0(14)
+        $$GENIO
+        MEnd

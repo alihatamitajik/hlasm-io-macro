@@ -1,0 +1,106 @@
+        MACRO
+&LABEL  PRINTOUT &HEADER=YES
+.***************************************************************
+.* This macro lets you print register contents, areas of       *
+.* memory, and terminate execution. To print an area of memory,*
+.* specify its symbolic name.                                  *
+.*                                                             *
+.* Memory operands must be addressable by an S-type address    *
+.* constant to be printed by this macro -- all such arguments  *
+.* must be addressable. There may be any number of arguments   *
+.* for each macro call.                                        *
+.*                                                             *
+.* The printed output will contain the name of the item and    *
+.* the value of the named item. The output for each call may   *
+.* be preceded by a header message, which will be omitted if   *
+.* HEADER=NO is coded (after the last operand, usually).       *
+.*                                                             *
+.* To terminate execution of the program, code * as the last   *
+.* (or only) operand.                                          *
+.*                                                             *
+.* Format of parameter list:                                   *
+.* DC 2F'0' Save caller's R14/R15                              *
+.* DC V($$PRTOUT)                                              *
+.* DC AL1(flags),AL3(call_address)                             *
+.* DC A(call_statement_number)                                 *
+.* operand-specific data is described later in the macro.      *
+.***************************************************************
+        LCLA    &CNT,&LPCNT,&TCODE,&LENGTH,&A,&N
+        LCLB    &BADOP              Missing/Ignored operand
+        LCLC    &HDRC               Uppercase HEADER operand
+.* &CNT is number of parameters; &LPCNT is loop counter;
+.* &TCODE is operand code,
+&N      SetA    &SYSSTMT-1          Calling statement number
+        LCLC    &T                  TYPE CODE OF PARAM.
+&CNT    SETA    N'&SYSLIST          GET NO. OF ARGS.
+        CNOP    2,4                 ALIGNMENT
+&LABEL  STM     14,15,*+10          SAVE REGS.
+        L       15,*+14             ADDR PRINTOUT ROUTINE
+        BALR     14,15              CALL ROUTINE
+        DC      2F'0',V($$PRTOUT)   SAVE AREA, ADDR PRINTOUT
+&HDRC   SetC    Upper('&HEADER')    Upper case
+        AIF     ('&HDRC' NE 'NO').NHDR
+&A      SETA    1                   INDICATE NO HEADER
+.NHDR   AIF     (&CNT NE 0).SS1
+&A      SETA    &A+240              INDICATE NO PARMS
+.SS1    DC      AL1(&A),AL3(*-23),A(&N)     PARAMETER FLAGS
+AIF (&CNT EQ 0).ENDLOOP             EXIT IF NO PARMS
+.PARMLP AIF     (&CNT LE &LPCNT).ENDLOOP    TEST IF LOOP COMPLETE
+&LPCNT  SETA    &LPCNT+1            INC. LOOP CNTR
+&T      SETC    T'&SYSLIST(&LPCNT)  TYPE CODE OF OPERAND
+&TCODE  SETA    32                  HEX IS DEFAULT
+&LENGTH SETA    8                   DEFAULT LENGTH
+        AIF     ('&SYSLIST(&LPCNT)' NE '*').SS4 BRANCH IF NOT *
+        DC      X'0800'             PRINTOUT *
+        AGO     .GENIO              GENERATE I/O SECTION
+.SS4    AIF     ('&T' EQ 'C').CHAR  BRANCH IF OPER. CHAR.
+        AIF     ('&T' EQ 'F' OR '&T' EQ 'H').DEC    PRINT AS DEC
+        AIF     ('&T' EQ 'J' OR '&T' EQ 'M').LOK    DEFAULT ATTR.
+        AIF     ('&T' EQ 'T' OR '&T' EQ 'U').LOK    DEFAULT ATTR.
+        AIF     ('&T' EQ 'N').LOKN  DEFAULT ATTRIBUTES
+        AIF     ('&T' NE 'O').GETLEN    GET LENGTH ATTRIB.
+        MNOTE *,'Omitted argument &LPCNT ignored.'
+&BADOP  SETB    (1)                 Indicate bad/missing operand
+        AGO     .PARMLP
+.LOKN   ANOP
+&A      SETA     &SYSLIST(&LPCNT)   GET VALUE OF ARGUMENT
+        AIF     (&A LT 48).LOK      BRANCH IF VALID
+        MNOTE   *,'Operand &LPCNT ignored: value (&A) too big.'
+&BADOP  SETB    (1)                 Indicate bad operand
+        AGO     .PARMLP             SKIP THIS ARGUMENT
+.DEC    ANOP                        F OR H CONSTANT
+&TCODE  SETA    64                  PRINT AS DECIMAL HWORD
+        AIF     ('&T' EQ 'H').GETLEN    GET LENGTH ATTRIB HWORD
+&TCODE  SETA    65                  PRINT AS DECIMAL FWORD
+        AGO     .GETLEN             GET LENGTH ATTRIB.
+.CHAR   ANOP                        CHARACTER STRING
+&TCODE  SETA    16                  TYPE IS CHARACTER
+.GETLEN ANOP
+&LENGTH SETA    L'&SYSLIST(&LPCNT) LENGTH ATTRIBUTE
+.* Max length chosen so printed data will fit on one print line
+        AIF     (&LENGTH LE 50).LOK IF LENGTH < 50 O.K.
+        AIF     (&LENGTH LE 100 AND '&T' EQ 'C').LOK CHAR, 100 OK.
+&LENGTH SETA    100                 MAX LENGTH FOR CHAR STR
+        AIF     ('&T' EQ 'C').LOK
+&LENGTH SETA    50                  MAX LENGTH FOR HEX STR
+.LOK    ANOP
+        AIF     (&LPCNT NE &CNT).TCODEOK CHECK IF LAST OPERAND
+&TCODE  SETA    &TCODE+128          LAST OPERAND
+.TCODEOK ANOP
+&LENGTH SETA    &LENGTH-1           USE LENGTH-1 AS PARM.
+.***************************************************************
+.* PARAMS TO PRINTOUT--TYPE,LENGTH-1,S(ADDRESS),PRINTNAME
+.* Type code: X'80' = last item X'40' = decimal conversion
+.* X'20' = hexadecimal X'10' = character
+.* X'08' = Prtout * X'01' = decimal fullword
+.* All zero halfword means last operand was bad
+.***************************************************************
+        DC      AL1(&TCODE),AL1(&LENGTH),S(&SYSLIST(&LPCNT))
+        DC      CL8'&SYSLIST(&LPCNT)'   8 Characters of print name
+&BADOP  SETB    (0)                 Indicate OK operand
+        AGO     .PARMLP             GET NEXT OPERAND
+.ENDLOOP AIF    (NOT &BADOP).DOLM   Check bad last operand
+        DC      H'0'                Indicate null last operand
+.DOLM   LM      14,15,0(14)         RESTORE REGISTERS
+.GENIO  $$GENIO                     GENERATE I/O SECT
+        MEND

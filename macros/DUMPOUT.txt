@@ -1,0 +1,38 @@
+        MACRO
+&LABEL  DUMPOUT &LOW,&HIGH,&HEADER=YES
+.***************************************************************
+.* This macro dumps out an area of memory between the addresses*
+.* specified by &LOW and &HIGH. The dump is in standard form,  *
+.* with eight words per line along with their EBCDIC character *
+.* format at the right end. The header, giving the location    *
+.* from which the macro was called, is optional.               *
+.*                                                             *
+.* Generated parameter list:                                   *
+.* DC 2F'0' For caller's R41,R15                               *
+.* DC V($$DMPOUT)                                              *
+.* DC AL1(flags),AL3(call_address)                             *
+.* DC A(calling statement number                               *
+.* DC S(low_dump_addr),S(high_dump_addr)                       *
+.***************************************************************
+        LCLA    &HDR,&N             &HDR = 1 IF NO HEADER
+        LCLC    &HDRC               HEADER
+&N      SetA    &SYSSTMT-1          Save statement number
+.NL     AIF     ('&LOW' NE '').LOW   FIRST PARM IS THERE
+        MNOTE   8,'No starting address. DUMPOUT ignored.'
+        MEXIT
+.LOW    CNOP    2,4                 ALIGNMENT
+&LABEL  STM     14,15,*+10          SAVE R14 & R15
+        L       15,*+14             ADDR DUMPOUT ROUTINE
+        BALR    14,15               CALL
+&HDRC   SetC    Upper('&HEADER')    Force to upper case
+        AIF     ('&HDRC' EQ 'YES').NHDR SKIP IF A HEADER
+        AIF     ('&HDRC' NE 'NO').NHDR  SKIP IF A HEADER
+&HDR    SETA    1                   SET TO IGNORE HEADER
+.NHDR   DC      2F'0',V($$DMPOUT),AL1(&HDR),AL3(*-23),A(&N)
+        AIF     ('&HIGH' EQ '').NOHIGH  NO HIGH PARM
+        DC      S(&LOW),S(&HIGH) D  UMPOUT ADDRESSES
+        AGO     .FINIS
+.NOHIGH DC      2S(&LOW)              DUMPOUT ADDRESS
+.FINIS  LM      14,15,0(14)         RESTORE REGISTERS
+        $$GENIO                     GENERATE I/O SECTION
+        MEND

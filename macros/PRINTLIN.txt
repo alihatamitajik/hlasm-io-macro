@@ -1,0 +1,30 @@
+        MACRO
+&LABEL  PRINTLIN &DATA,&LEN
+.***************************************************************
+.* This macro sends a line image to a printer. The first       *
+.* character of the string starting at &DATA is assumed to be  *
+.* an ASA carriage control character. The default line length  *
+.* is 121 characters, but this value may be overridden by the  *
+.* value given in the optional second parameter, &LEN. If the  *
+.* value of &LEN is greater than 121, then 121 will be used.   *
+.*                                                             *
+.* Format of parameter list:                                   *
+.* DC 2F'0' Save R14 & R15                                     *
+.* DC V($$PRTLIN),S(data),S(Len)                               *
+.***************************************************************
+        AIF     ('&LABEL'EQ '').AA  SKIP LABEL DEFINITION
+&LABEL  DC      0H'0'               DECLARE LABEL
+.AA     AIF     ('&DATA' NE '').PARMOK  ERR IF NO DATA AREA
+        MNOTE 8,'Missing data area parameter. PRINTLIN ignored.'
+        MEXIT
+.PARMOK CNOP    2,4                 ALIGNMENT
+        STM     14,15,*+10          SAVE R14 & R15
+        L       15,*+14             ADDR PRINTLIN ROUTINE
+        BALR    14,15               CALL
+        AIF     ('&LEN' EQ '').DEFLEN   IF LEN OMIT. USE DEFAULT
+        DC      2F'0',V($$PRTLIN),S(&DATA),S(&LEN)
+        AGO     .LM
+.DEFLEN DC      2F'0',V($$PRTLIN),S(&DATA),S(121)   DEFAULT LENGTH
+.LM     LM      14,15,0(14)         RESTORE REGS.
+        $$GENIO                     GENERATE I/O SECTION
+        MEND

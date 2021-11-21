@@ -1,0 +1,36 @@
+        MACRO
+&LABEL  READCARD &DATA,&EOFADDR     BOTH ARGS ADDRESSABLE
+.***************************************************************
+.* This macro reads a single 80-byte ″card image″ record into  *
+.* the buffer provided by &DATA. If an end-of-file condition   *
+.* is sensed on the input file, and the end-file parameter     *
+.* &EOFADDR is present, then control will be returned to that  *
+.* location. If no end-file parameter is present, the job      *
+.* is terminated with an appropriate message.                  *
+.*                                                             *
+.* Generated argument list:                                    *
+.* DC 2F'0' Save R14 & R15                                     *
+.* DC AL1(flag),VL3($$READCD)                                  *
+.* DC A(calling_statement_number)                              *
+.* DC S(data)                                                  *
+.* BC 0,EndFile_Address                                        *
+.***************************************************************
+        LCLB    &EOFFLG             1 IF THERE IS EOFADDR
+        LCLA    &T
+.AA     AIF     ('&EOFADDR' EQ '').DECLAB   TEST IF EOFADDR PRESENT
+&EOFFLG SETB    1                   EOFADDR PRESENT
+.DECLAB AIF     ('&DATA' NE '').PARMOK  SEE IF FIRST PARAM THERE
+        MNote   8,'Missing data area parameter. READCARD ignored.'
+        MEXIT                       ERROR EXIT FROM MACRO
+.PARMOK ANOP    ,
+        CNOP    2,4                 ALIGNMENT
+&LABEL  STM     14,15,*+10          SAVE REGS 14 & 15
+        L       15,*+14             ADDRESS READCARD ROUTINE
+        BALR    14,15               CALL ROUTINE
+&T      SETA    128*&EOFFLG
+        DC      2F'0',AL1(&T),VL3($$READCD),A(*-22),S(&DATA)
+        LM      14,15,0(14)         RESTORE R14 & R15
+        AIF     (NOT(&EOFFLG)).GENIO    NO EOFFADDR, NO BC INSTR
+        BC      0,&EOFADDR          COND. JUMP TO EOFADDR
+.GENIO  $$GENIO                     GENERATE I/O SECTION
+        MEND
