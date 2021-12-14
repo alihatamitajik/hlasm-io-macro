@@ -1,7 +1,7 @@
         MACRO
 &LABEL  READCARD &DATA,&EOFADDR     BOTH ARGS ADDRESSABLE
 .***************************************************************
-.* This macro reads a single 80-byte â€³card imageâ€³ record into  *
+.* This macro reads a single 80-byte â?³card imageâ?³ record into  *
 .* the buffer provided by &DATA. If an end-of-file condition   *
 .* is sensed on the input file, and the end-file parameter     *
 .* &EOFADDR is present, then control will be returned to that  *

@@ -145,7 +145,7 @@ $$PAT2  DC X'402020202020202020202120' PATTERN TO PRINT DEC.
 $$PAT3  DC 0XL21'0',2X'40',17X'20',X'2120' Pattern for GGR
 $$PAT4  DC X'402020202120'          Pattern for statement number
 $$DUMPTB DC 64C'.',C' ',9C'.',C'¢.<(+|&&',10C'.',C'$*);¬-/'
-        DC 9C'.',C',%_>?',10C'.',C':#@''=″ . abcdefghi',7C'.'
+        DC 9C'.',C',%_>?',10C'.',C':#@''=".abcdefghi',7C'.'
         DC C'jklmnopqr',8C'.',C'stuvwxyz',23C'.',C'ABCDEFGHI'
         DC 7C'.',C'JKLMNOPQR',8C'.',C'STUVWXYZ',6C'.'
         DC C'0123456789',6C'.'
@@ -175,10 +175,10 @@ $$RDOPEN OPEN ($$INDCB,(INPUT)),MF=L    OPEN LIST FOR SYSIN
 $$PRCLOS CLOSE ($$OUDCB),MF=L           CLOSE LIST FOR SYSPRINT
 $$RDCLOS CLOSE ($$INDCB),MF=L           CLOSE LIST FOR SYSIN
 .* Input and output DCBs. BLKSISE might be provided on DD statement.
-$$OUDCB DCB MACRF=PM,DSORG=PS,RECFM=FBA,EXLST=$$DCBXIT,                       X                 
-                LRECL=&$$PLL,DDNAME=&$$ONAM
-$$INDCB DCB MACRF=GM,DSORG=PS,LRECL=80,RECFM=FB,                              X
-                DDNAME=&$$INAM,EODAD=$$EOF,EXLST=$$DCBXIT
+$$OUDCB DCB MACRF=PM,DSORG=PS,RECFM=FBA,EXLST=$$DCBXIT,                X
+               LRECL=&$$PLL,DDNAME=&$$ONAM
+$$INDCB DCB MACRF=GM,DSORG=PS,LRECL=80,RECFM=FB,                       X
+               DDNAME=&$$INAM,EODAD=$$EOF,EXLST=$$DCBXIT
         AGO     .BLANK
 .BUF    ANOP                        DO DOS DEFINITIONS
 $$ADDRI DC      A($$INDCB)          ADDRESS OF INPUT DTF
@@ -190,10 +190,10 @@ $$ADDRO DC      A($$OUDCB)          ADDRESS OF OUTPUT DTF
 $$OPEN  DC      2X'5B',CL6'BOPEN'   DOS OPEN ROUTINE NAME
 $$CLOSE DC      2X'5B',CL6'BCLOSE'  DOS CLOSE ROUTINE NAME
 $$ASA   DC      C'CBA98765432+-10 ' VALID ASA CONTROL CHARS
-$$OUDCB DTFPR   CTLCHR=ASA,WORKA=YES,IOAREA1=$$IOAOU1,                        X      
-                IOAREA2=$$IOAOU2,DEVADDR=&$$ONAM,BLKSIZE=&$$PLL
-$$INDCB DTFCD   WORKA=YES,EOFADDR=$$EOF,IOAREA1=$$IOAIN1,                     X            
-                IOAREA2=$$IOAIN2,BLKSIZE=80,DEVADDR=&$$INAM
+$$OUDCB DTFPR   CTLCHR=ASA,WORKA=YES,IOAREA1=$$IOAOU1,                 X
+               IOAREA2=$$IOAOU2,DEVADDR=&$$ONAM,BLKSIZE=&$$PLL
+$$INDCB DTFCD   WORKA=YES,EOFADDR=$$EOF,IOAREA1=$$IOAIN1,              X
+               IOAREA2=$$IOAIN2,BLKSIZE=80,DEVADDR=&$$INAM
 $$IOAIN1 DS     CL80 INPUT BUFFER 1
 $$IOAIN2 DS     CL80 INPUT BUFFER 2
 $$IOAOU1 DS     CL&$$PLL OUTPUT BUFFER 1
@@ -223,7 +223,7 @@ $$MOVE  MVC     $$REGS+56-$$(8,13),0(14) COPY USER'S R14 & R15
         J       $$LINP              PRINTLIN
         J       $$PODO              PRINTOUT/DUMPOUT
         J       $$CVTO              CONVERTO
-.*      J       $$CVTI              CONVERTI (follows immediately!)
+.*      J       $$CVTI CONVERTI (follows immediately!)
 .*-------------------------------------------------------------------
 .* CONVERTI -- convert to 32 or 64 bit signed integer in GR
 .*-------------------------------------------------------------------

@@ -36,7 +36,7 @@
         CNOP    2,4                 ALIGNMENT
 &LABEL  STM     14,15,*+10          SAVE REGS.
         L       15,*+14             ADDR PRINTOUT ROUTINE
-        BALR     14,15              CALL ROUTINE
+        BALR    14,15               CALL ROUTINE
         DC      2F'0',V($$PRTOUT)   SAVE AREA, ADDR PRINTOUT
 &HDRC   SetC    Upper('&HEADER')    Upper case
         AIF     ('&HDRC' NE 'NO').NHDR
@@ -44,7 +44,7 @@
 .NHDR   AIF     (&CNT NE 0).SS1
 &A      SETA    &A+240              INDICATE NO PARMS
 .SS1    DC      AL1(&A),AL3(*-23),A(&N)     PARAMETER FLAGS
-AIF (&CNT EQ 0).ENDLOOP             EXIT IF NO PARMS
+        AIF     (&CNT EQ 0).ENDLOOP         EXIT IF NO PARMS
 .PARMLP AIF     (&CNT LE &LPCNT).ENDLOOP    TEST IF LOOP COMPLETE
 &LPCNT  SETA    &LPCNT+1            INC. LOOP CNTR
 &T      SETC    T'&SYSLIST(&LPCNT)  TYPE CODE OF OPERAND
